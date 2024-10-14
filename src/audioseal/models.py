@@ -150,13 +150,16 @@ class AudioSealWM(torch.nn.Module):
 
         wm_audio_list = []
 
-        print("len(audio_chunks) = "+str(len(audio_chunks)))
 
         for chunk in audio_chunks:
           chunk = chunk.unsqueeze(0)
           wm_chunk = self.get_watermark(chunk, sample_rate=sample_rate, message=secret_message)
+
           # calculate alpha here 
-          wm_audio_chunk = chunk + alpha * wm_chunk
+          alpha_val = calculate_adaptive_alpha(wm_chunk.squeeze(0))
+          # print("alpha_val: "+str(alpha_val))
+
+          wm_audio_chunk = chunk + alpha_val * wm_chunk
           # print('watermarked inside!')
 
           wm_audio_list.append(wm_audio_chunk)
@@ -171,8 +174,6 @@ def chunk_audio(audio_tensor, sample_rate):
 
   chunks = []
   num_samples = audio_tensor.size(1)  # Total number of samples in the audio
-  print("audio_tensor.shape: "+str(audio_tensor.shape))
-  print("num_samples: " + str(num_samples))
 
   start = 0
 
@@ -185,6 +186,35 @@ def chunk_audio(audio_tensor, sample_rate):
 
 def recombine_audio(chunks_list):
   return torch.cat(chunks_list, dim=2)
+
+
+def calculate_adaptive_alpha(audio_tensor, sample_rate=16000, n_fft=400, hop_length=200):
+    # Compute the STFT of the audio
+    stft_result = torch.stft(audio_tensor, n_fft=n_fft, hop_length=hop_length, return_complex=True)
+    
+    # Compute the magnitude of the STFT (i.e., |X(t, f)|)
+    magnitude = torch.abs(stft_result)
+    
+    # Calculate the squared magnitude (energy per time-frequency bin)
+    energy_per_bin = magnitude**2
+    
+    # Get the mean of all the squared magnitudes
+    mean_energy = torch.mean(energy_per_bin)
+    mean_energy_value = mean_energy.item()*100  # this is a small 0.000x value
+
+    # get it into the range between 0.5 and 1.5
+    #OldRange = (OldMax - OldMin) 
+    old_range = 1 - 0
+
+    #NewRange = (NewMax - NewMin)  
+    new_range = 1.5 - 0.5
+
+    #NewValue = (((OldValue - OldMin) * NewRange) / OldRange) + NewMin
+    new_value = (((mean_energy_value - 0) * new_range) / old_range) + 0.5
+    
+    return new_value
+
+
 
 class AudioSealDetector(torch.nn.Module):
     """
