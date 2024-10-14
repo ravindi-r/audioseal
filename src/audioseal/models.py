@@ -144,21 +144,20 @@ class AudioSealWM(torch.nn.Module):
         #wm = self.get_watermark(x, sample_rate=sample_rate, message=message)
         #return x + alpha * wm
 
-        ## NEW START 
+        x = x.squeeze(0)
         audio_chunks = chunk_audio(x, sample_rate)
         secret_message = message
 
         wm_audio_list = []
-        # wm_list = []
 
         print("len(audio_chunks) = "+str(len(audio_chunks)))
 
         for chunk in audio_chunks:
-          # audios = chunk.unsqueeze(0)
+          chunk = chunk.unsqueeze(0)
           wm_chunk = self.get_watermark(chunk, sample_rate=sample_rate, message=secret_message)
           # calculate alpha here 
           wm_audio_chunk = chunk + alpha * wm_chunk
-          print('watermarked inside!')
+          # print('watermarked inside!')
 
           wm_audio_list.append(wm_audio_chunk)
 
