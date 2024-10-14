@@ -141,9 +141,46 @@ class AudioSealWM(torch.nn.Module):
         if sample_rate is None:
             logger.warning(COMPATIBLE_WARNING)
             sample_rate = 16_000
-        wm = self.get_watermark(x, sample_rate=sample_rate, message=message)
-        return x + alpha * wm
+        #wm = self.get_watermark(x, sample_rate=sample_rate, message=message)
+        #return x + alpha * wm
 
+        ## NEW START 
+        audio_chunks = chunk_audio(x, sample_rate)
+        secret_message = message
+
+        wm_audio_list = []
+        # wm_list = []
+
+        for chunk in audio_chunks:
+          # audios = chunk.unsqueeze(0)
+          wm_chunk = self.get_watermark(chunk, sample_rate=sample_rate, message=secret_message)
+          # calculate alpha here 
+          wm_audio_chunk = chunk + alpha * wm_chunk
+          print('watermarked inside!')
+
+          wm_audio_list.append(wm_audio_chunk)
+
+        watermarked_audio = recombine_audio(wm_audio_list)
+
+        return watermarked_audio
+
+
+def chunk_audio(audio_tensor, sample_rate):
+  chunk_length = sample_rate
+
+  chunks = []
+  num_samples = audio_tensor.size(1)  # Total number of samples in the audio
+  start = 0
+
+  while start < num_samples:
+      end = start + chunk_length  # End of the current chunk
+      chunks.append(audio_tensor[:, start:end])
+      start = end
+
+  return chunks
+
+def recombine_audio(chunks_list):
+  return torch.cat(chunks_list, dim=2)
 
 class AudioSealDetector(torch.nn.Module):
     """
