@@ -151,6 +151,8 @@ class AudioSealWM(torch.nn.Module):
         wm_audio_list = []
         # wm_list = []
 
+        print("len(audio_chunks) = "+str(len(audio_chunks)))
+
         for chunk in audio_chunks:
           # audios = chunk.unsqueeze(0)
           wm_chunk = self.get_watermark(chunk, sample_rate=sample_rate, message=secret_message)
@@ -170,6 +172,9 @@ def chunk_audio(audio_tensor, sample_rate):
 
   chunks = []
   num_samples = audio_tensor.size(1)  # Total number of samples in the audio
+  print("audio_tensor.shape: "+str(audio_tensor.shape))
+  print("num_samples: " + str(num_samples))
+
   start = 0
 
   while start < num_samples:
