@@ -137,6 +137,7 @@ class AudioSealWM(torch.nn.Module):
         message: Optional[torch.Tensor] = None,
         alpha: float = 1.0,
     ) -> torch.Tensor:
+        print("testing huggingface")
         """Apply the watermarking to the audio signal x with a tune-down ratio (default 1.0)"""
         if sample_rate is None:
             logger.warning(COMPATIBLE_WARNING)
